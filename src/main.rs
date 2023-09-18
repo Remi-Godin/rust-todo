@@ -6,29 +6,44 @@ fn main() {
     loop {
         let _ = term.clone().clear_screen();
         print_entries(&todo_list);
-        main_menu(&term, &mut todo_list)
+        let quit = main_menu(&term, &mut todo_list);
+        if quit {
+            break
+        }
     }
 }
 
-fn main_menu(term: &Term, todo_list: &mut Vec<TodoEntry>) {
-    let _ = term.write_line("(N)ew entry, (C)omplete entries");
+fn main_menu(term: &Term, todo_list: &mut Vec<TodoEntry>) -> bool {
+    let _ = term.write_line("(N)ew entry|(M)ark as done|(U)nmark as done|(D)elete entries|(Q)uit");
     let _ = match term.read_key().unwrap() {
         console::Key::Char('n') => match create_entry(term.clone()) {
-            Some(r) => todo_list.push(r),
-            None => print!("")
+            Some(r) => {todo_list.push(r);
+                return false}
+            None => {print!("");
+                return false}
         }
-        console::Key::Char('c') => {complete_entries(todo_list, &select_entries(term.clone()));
-            return}
-        _ => println!("Unknown command")
+        console::Key::Char('m') => {
+            let _ = term.clear_last_lines(1);
+            mark_as_done(todo_list, &select_entries(term.clone()));
+            return false},
+        console::Key::Char('u') => {
+            let _ = term.clear_last_lines(1);
+            mark_as_not_done(todo_list, &select_entries(term.clone()));
+            return false},
+        console::Key::Char('d') => {
+            let _ = term.clear_last_lines(1);
+            delete_entries(todo_list, &select_entries(term.clone()));
+            return false},
+        console::Key::Char('q') => return true,
+        _ => return false
     };
 
 }
 
-fn print_entries(entry_list: &Vec<TodoEntry>) -> &Vec<TodoEntry>{
-    for (i, j) in entry_list.iter().enumerate() {
+fn print_entries(todo_list: &Vec<TodoEntry>) {
+    for (i, j) in todo_list.iter().enumerate() {
         println!("{:02}. {}", i, j);
     }
-    entry_list
 }
 
 fn create_entry(term: Term) -> Option<TodoEntry> {
@@ -49,6 +64,15 @@ fn create_entry(term: Term) -> Option<TodoEntry> {
     return Some(new_entry);
 }
 
+fn delete_entries(todo_list: &mut Vec<TodoEntry>, entries: &Vec<usize>) {
+    for i in entries.iter().rev() {
+        if i < &todo_list.len(){
+            todo_list.remove(*i);
+        }
+    }
+    print_entries(&todo_list);
+}
+
 fn select_entries(term: Term) -> Vec<usize>{
     let _ = term.clear_last_lines(1);
     let _ = term.write_line("Enter the number of each tasks you want to act on, separated by spaces...");
@@ -62,13 +86,23 @@ fn select_entries(term: Term) -> Vec<usize>{
             args_vec.push(i.parse::<usize>().unwrap());
         }
     }
+    args_vec.sort();
     args_vec
 }
 
-fn complete_entries(todo_list: &mut Vec<TodoEntry>, entries: &Vec<usize>) {
+fn mark_as_done(todo_list: &mut Vec<TodoEntry>, entries: &Vec<usize>) {
     for i in entries.iter() {
         if i < &todo_list.len(){
             todo_list.get_mut(*i).unwrap().complete();
+        }
+    }
+    print_entries(&todo_list);
+}
+
+fn mark_as_not_done(todo_list: &mut Vec<TodoEntry>, entries: &Vec<usize>) {
+    for i in entries.iter() {
+        if i < &todo_list.len(){
+            todo_list.get_mut(*i).unwrap().incomplete();
         }
     }
     print_entries(&todo_list);
@@ -84,7 +118,7 @@ impl std::fmt::Display for TodoEntry {
         let mut flag = "[ ]";
         if self.complete == true {
             flag = "[X]";
-        }
+        } 
         write!(f, "{} {}", flag, self.description)
     }
 }
@@ -92,5 +126,9 @@ impl std::fmt::Display for TodoEntry {
 impl TodoEntry {
     fn complete(&mut self) {
         self.complete = true;
+    }
+
+    fn incomplete(&mut self) {
+        self.complete = false;
     }
 }
