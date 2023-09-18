@@ -22,17 +22,11 @@ fn main_menu(term: &Term, todo_list: &mut Vec<TodoEntry>) -> bool {
             None => {print!("");
                 return false}
         }
-        console::Key::Char('m') => {
-            let _ = term.clear_last_lines(1);
-            mark_as_done(todo_list, &select_entries(term.clone()));
+        console::Key::Char('m') => {mark_as_done(todo_list, &select_entries(term.clone()));
             return false},
-        console::Key::Char('u') => {
-            let _ = term.clear_last_lines(1);
-            mark_as_not_done(todo_list, &select_entries(term.clone()));
+        console::Key::Char('u') => {mark_as_not_done(todo_list, &select_entries(term.clone()));
             return false},
-        console::Key::Char('d') => {
-            let _ = term.clear_last_lines(1);
-            delete_entries(todo_list, &select_entries(term.clone()));
+        console::Key::Char('d') => {delete_entries(todo_list, &select_entries(term.clone()));
             return false},
         console::Key::Char('q') => return true,
         _ => return false
