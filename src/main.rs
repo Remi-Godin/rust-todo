@@ -6,38 +6,74 @@ fn main() {
     let term = Term::stdout();
     loop {
         let _ = term.clone().clear_screen();
-        print_entries(&todo_list, 0);
-        todo_list.push(create_entry(term.clone()));
-        manage_entries(term.clone());
+        print_entries(&todo_list);
+        main_menu(&term, &mut todo_list)
     }
 }
 
-fn print_entries(entry_list: &Vec<TodoEntry>, count: i32) {
-    for i in entry_list.iter() {
-        println!("{}", i);
-    }
+fn main_menu(term: &Term, todo_list: &mut Vec<TodoEntry>) {
+    let _ = term.write_line("(N)ew entry, (C)omplete entries");
+    let _ = match term.read_key().unwrap() {
+        console::Key::Char('n') => todo_list.push(create_entry(term.clone()).unwrap()),
+        console::Key::Char('c') => {complete_entries(todo_list, &select_entries(term.clone()));
+            return}
+        _ => println!("Unknown command")
+    };
+
 }
 
-fn create_entry(term: Term) -> TodoEntry {
-    let _ = term.write_line("Enter task description...");
-    let desc = term.read_line();
+fn print_entries(entry_list: &Vec<TodoEntry>) -> &Vec<TodoEntry>{
+    for (i, j) in entry_list.iter().enumerate() {
+        println!("{:02}. {}", i, j);
+    }
+    entry_list
+}
+
+fn create_entry(term: Term) -> Option<TodoEntry> {
+    let _ = term.write_line("Enter task description, or press [enter] to exit...");
+    let desc = match term.read_line() {
+        Err(e) => panic!("An error has occured when reading user input: {}", e),
+        Ok(r) => r
+    };
+    if desc == "" {
+        return None
+    }
     let _ = term.clear_last_lines(2);
     let new_entry = TodoEntry {
         complete: false,
-        description: desc.unwrap_or_default(),
-        timestamp: SystemTime::now(),
+        description: desc,
+        _timestamp: SystemTime::now(),
+        _completed_timestamp: SystemTime::now()
     };
-    return new_entry;
+    return Some(new_entry);
 }
 
-fn manage_entries(term: Term) {
+fn select_entries(term: Term) -> Vec<usize>{
+    let _ = term.write_line("Enter the number of each tasks you want to act on, separated by spaces...");
+    let args = match term.read_line() {
+        Err(e) => panic!("An error as occured when reading user input: {}", e),
+        Ok(r) => r
+    };
+    let mut args_vec: Vec<usize> = Vec::new();
+    for i in args.split(" ") {
+        args_vec.push(i.trim().parse::<usize>().unwrap_or_default());
+    }
+    args_vec
+}
+
+fn complete_entries(todo_list: &mut Vec<TodoEntry>, entries: &Vec<usize>) {
+    for i in entries.iter() {
+        todo_list.get_mut(*i).unwrap().complete();
+    }
+    print_entries(&todo_list);
+}
+
+fn _manage_entries(term: Term) {
     loop {
         let input = term.read_char().unwrap_or_default();
         let _ = match input {
-            'h' => term.move_cursor_left(1),
             'j' => term.move_cursor_down(1),
             'k' => term.move_cursor_up(1),
-            'l' => term.move_cursor_right(1),
             _ => break,
         };
     }
@@ -46,7 +82,8 @@ fn manage_entries(term: Term) {
 struct TodoEntry {
     complete: bool,
     description: String,
-    timestamp: SystemTime,
+    _timestamp: SystemTime,
+    _completed_timestamp: SystemTime,
 }
 
 impl std::fmt::Display for TodoEntry {
@@ -55,6 +92,12 @@ impl std::fmt::Display for TodoEntry {
         if self.complete == true {
             flag = "[X]";
         }
-        write!(f, "{:?} {} {}", self.timestamp, flag, self.description)
+        write!(f, "{} {}", flag, self.description)
+    }
+}
+
+impl TodoEntry {
+    fn complete(&mut self) {
+        self.complete = true;
     }
 }
