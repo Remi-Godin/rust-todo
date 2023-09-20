@@ -1,47 +1,23 @@
-use chrono::{Utc, DateTime};
+mod data;
 
 fn main() {
+    test_1();
 }
+
 
 fn test_1() {
-    let test = TodoEntry {
+    let test = data::TodoEntry {
         done: false,
         description: String::from("Testing"),
-        creation_timestamp: chrono::offset::Utc::now(),
-        _completed_timestamp: chrono::offset::Utc::now()
-
     };
-    println!("{}", test);
-}
+    let mut my_todo_list: Vec<data::TodoEntry> = Vec::new();
+    my_todo_list.push(test);
+    let todo_list = data::TodoList {
+        list_name: String::from("Testing"),
+        file_location: String::from("UNUSUED"),
+        todo_list: my_todo_list
+    };
+    todo_list.save_list();
 
-struct TodoEntry {
-    done: bool,
-    description: String,
-    creation_timestamp: DateTime<Utc>,
-    _completed_timestamp: DateTime<Utc>
-}
-
-impl TodoEntry {
-    fn mark_as_done(&mut self) {
-        self.done = true;
-    }
-
-    fn mark_as_not_done(&mut self) {
-        self.done = false;
-    }
-}
-
-impl std::fmt::Display for TodoEntry {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let mut checkbox = "[ ]";
-        if self.done == true {
-            checkbox = "[X]";
-        };
-        write!(f, "{} {}", checkbox, self.description)
-    }
-}
-
-
-struct TodoList {
-    todo_list: Vec<TodoEntry>
+    
 }
