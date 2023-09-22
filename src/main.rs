@@ -7,15 +7,9 @@ fn main() {
 
 
 fn _test_1() {
-    let test = data::TodoEntry {
-        done: false,
-        description: String::from("Testing"),
-    };
-    let my_todo_list: Vec<data::TodoEntry> = vec![test];
-    let mut todo_list = data::TodoList {
-        list_name: String::from("Testing"),
-        todo_list: my_todo_list,
-    };
+    let test_entry = data::TodoEntry::new(String::from("Testing"));
+    let mut todo_list = data::TodoList::new(String::from("List_01"));
+    todo_list.add(test_entry);
     data::save_list(&mut todo_list);
 }
 
