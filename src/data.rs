@@ -1,6 +1,6 @@
+#![allow(dead_code)]
 use std::fs;
 use serde::{Serialize, Deserialize};
-use serde_json;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TodoEntry {
@@ -18,7 +18,6 @@ impl TodoEntry {
     }
 }
 
-
 impl std::fmt::Display for TodoEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut checkbox = "[ ]";
@@ -32,23 +31,42 @@ impl std::fmt::Display for TodoEntry {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TodoList {
     pub list_name: String,
-    pub file_location: String,
-    pub todo_list: Vec<TodoEntry>
+    pub todo_list: Vec<TodoEntry>,
 }
 
-
 impl TodoList {
-    pub fn save_list(&self) -> bool {
-        match serde_json::to_string(&self) {
-            Ok(r) => match fs::write(&self.list_name, r) {
-                Ok(_) => return true,
-                Err(_) => {println!("Failed to write to file");
-                    return false}
-            }
-            Err(e) => panic!("Failed to serialize struct: {e}")
+    pub fn print_list(&self) {
+        for i in self.todo_list.iter() {
+            println!("{}", i);
         }
     }
+}
 
-    fn load_list(&self) {
+pub fn save_list(list: &mut TodoList) -> bool {
+    if !std::path::Path::new("lists").exists(){
+        match fs::create_dir("lists") {
+            Ok(_) => println!("New directory created"),
+            Err(e) => println!("Failed to create directory: {}", e)
+        }
+    }
+    let path = format!("lists/{}.json", &list.list_name);
+    match serde_json::to_string(list) {
+        Ok(r) => match fs::write(path, r) {
+            Ok(_) => true,
+            Err(_) => {println!("Failed to write to file");
+                false}
+        }
+        Err(e) => panic!("Failed to serialize struct: {e}")
+    }
+}
+pub fn load_list(list_name: String) -> TodoList {
+    let path = format!("lists/{}.json", list_name);
+    let data = match fs::read_to_string(path) {
+        Ok(r) => r,
+        Err(e) => panic!("File could not be open: {}", e)
+    };
+    match serde_json::de::from_str(&data) {
+        Ok(r) => r,
+        Err(e) => panic!("Deserialization failed: {}", e)
     }
 }
