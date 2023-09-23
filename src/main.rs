@@ -17,10 +17,10 @@ fn get_lists(term: &Term) -> Vec<String> {
 
 fn main_menu_loop(term: &Term) {
     loop {
-        let lists = get_lists(&term);
+        let lists = get_lists(term);
         term.clear_screen().unwrap();
-        print_list_selection(&term, &lists);
-        let quit = display_main_menu(&term, &lists);
+        print_list_selection(term, &lists);
+        let quit = display_main_menu(term, &lists);
         if quit { break };
     }
 }
@@ -28,8 +28,8 @@ fn main_menu_loop(term: &Term) {
 fn list_menu_loop(term: &Term, mut list: TodoList) {
     loop {
         term.clear_screen().unwrap();
-        print_todo_list(&term, &list);
-        let quit = display_list_menu(&term, &mut list);
+        print_todo_list(term, &list);
+        let quit = display_list_menu(term, &mut list);
         if quit { break }
     }
     save_list(&mut list);
@@ -37,7 +37,11 @@ fn list_menu_loop(term: &Term, mut list: TodoList) {
 
 fn print_list_selection(term: &Term, list: &Vec<String>) {
     for (i, value) in list.iter().enumerate() {
-        let line = format!("{}. {}", i+1, value);
+        let line = format!("{:01}. {}", i+1, value.strip_prefix("lists/")
+                           .unwrap()
+                           .strip_suffix(".json")
+                           .unwrap()
+                           );
         term.write_line(&line).unwrap();
     }
 }
@@ -50,51 +54,57 @@ fn print_todo_list(term: &Term, todo: &TodoList) {
     }
 }
 
-fn display_number_menu(term: &Term) -> usize {
+fn display_number_menu(term: &Term) -> Option<usize> {
     term.write_line("Input desired list number: ").unwrap();
-    let choice = term.read_line()
+    let choice = match term.read_line()
         .unwrap()
         .trim()
-        .parse::<i32>()
-        .unwrap_or(0);
+        .parse::<i32>(){
+            Ok(r) => match r.cmp(&1) {
+                std::cmp::Ordering::Less => None,
+                _ => Some(r as usize)
+            }
+            Err(_) => None
+        };
     term.clear_last_lines(1).unwrap();
-    choice as usize
+    choice
 }
 
 fn display_main_menu(term: &Term, lists: &Vec<String>) -> bool {
     term.write_line("[O] open list | [N] new list | [D] delete list | [Q] quit").unwrap();
     let choice = term.read_char().unwrap();
     match choice {
-        'o' | 'O' => {open_list(&term, &lists); false},
-        'n' | 'N' => {new_list(&term); false}, 
-        'd' | 'D' => {delete_selected_list(&term, &lists); false},
+        'o' | 'O' => {open_list(term, lists); false},
+        'n' | 'N' => {new_list(term); false}, 
+        'd' | 'D' => {delete_selected_list(term, lists); false},
         'q' | 'Q' => true,
         _ => false
     }
 }
 
 fn open_list(term: &Term, lists: &Vec<String>) {
-    let choice = display_number_menu(&term);
-    let item: &String = match lists.get(choice-1) {
-        Some(r) => r,
-        None => return
-    };
-    let list = match load_list(item) {
-        Some(r) => r,
-        None => return
-    };
-    list_menu_loop(&term, list);
+    if let Some(choice) = display_number_menu(term) {
+        let item: &String = match lists.get(choice-1) {
+            Some(r) => r,
+            None => return
+        };
+        let list = match load_list(item) {
+            Some(r) => r,
+            None => return
+        };
+        list_menu_loop(term, list);
+    }
 }
 
 fn display_list_menu(term: &Term, list: &mut TodoList) -> bool {
     term.write_line("[N] new entry | [M] mark as done | [U] mark as not done| [D] delete entry | [R] rename list | [Q] quit").unwrap();
     let choice = term.read_char().unwrap();
     match choice {
-        'n' | 'N' => {new_entry(&term, list); false},
-        'm' | 'M' => {mark_entry_as_done(&term, list); false},
-        'u' | 'U' => {mark_entry_as_not_done(&term, list); false},
-        'd' | 'D' => {delete_entry(&term, list); false},
-        'r' | 'R' => {rename_list(&term, list); false},
+        'n' | 'N' => {new_entry(term, list); false},
+        'm' | 'M' => {mark_entry_as_done(term, list); false},
+        'u' | 'U' => {mark_entry_as_not_done(term, list); false},
+        'd' | 'D' => {delete_entry(term, list); false},
+        'r' | 'R' => {rename_list(term, list); false},
         'q' | 'Q' => true,
         _ => false
     }
@@ -107,18 +117,21 @@ fn new_entry(term: &Term, list: &mut TodoList) {
 }
 
 fn mark_entry_as_done(term: &Term, list: &mut TodoList) {
-    let choice = display_number_menu(&term) - 1;
-    list.todo_list.get_mut(choice).unwrap().mark_as_done();
+    if let Some(choice) = display_number_menu(term) {
+        list.todo_list.get_mut(choice-1).unwrap().mark_as_done();
+    }
 }
 
 fn mark_entry_as_not_done(term: &Term, list: &mut TodoList) {
-    let choice = display_number_menu(&term) - 1;
-    list.todo_list.get_mut(choice).unwrap().mark_as_not_done();
+    if let Some(choice) = display_number_menu(term) {
+        list.todo_list.get_mut(choice-1).unwrap().mark_as_not_done();
+    }
 }
 
 fn delete_entry(term: &Term, list: &mut TodoList) {
-    let choice = display_number_menu(&term) - 1;
-    list.remove(choice);
+    if let Some(choice) = display_number_menu(term) {
+        list.remove(choice-1);
+    }
 }
 
 fn rename_list(term: &Term, list: &mut TodoList) {
@@ -137,16 +150,17 @@ fn new_list(term: &Term) {
 }
 
 fn delete_selected_list(term: &Term, lists: &Vec<String>) {
-    let choice = display_number_menu(&term);
-    let path_to_list = match lists.get(choice-1) {
-        Some(r) => r,
-        None => return
-    };
-    let line = format!("Are you sure you want to delete {} ? [Y/N]", path_to_list);
-    term.write_line(&line).unwrap();
-    match term.read_char().unwrap() {
-        'y' | 'Y' => (),
-        _ => return
+    if let Some(choice) = display_number_menu(term) {
+        let path_to_list = match lists.get(choice-1) {
+            Some(r) => r,
+            None => return
+        };
+        let line = format!("Are you sure you want to delete {} ? [Y/N]", path_to_list);
+        term.write_line(&line).unwrap();
+        match term.read_char().unwrap() {
+            'y' | 'Y' => (),
+            _ => return
+        }
+        delete_list_by_path(path_to_list);
     }
-    delete_list_by_path(path_to_list);
 }
