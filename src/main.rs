@@ -142,7 +142,7 @@ fn delete_selected_list(term: &Term, lists: &Vec<String>) {
         Some(r) => r,
         None => return
     };
-    let line = format!("Are you sure you want to delete {} ? [Y/N]", &path_to_list);
+    let line = format!("Are you sure you want to delete {} ? [Y/N]", path_to_list);
     term.write_line(&line).unwrap();
     match term.read_char().unwrap() {
         'y' | 'Y' => (),
