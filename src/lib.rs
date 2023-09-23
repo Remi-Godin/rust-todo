@@ -1,10 +1,9 @@
-#![allow(dead_code)]
-use std::fs;
 use serde::{Serialize, Deserialize};
 
-//
-// TodoEntry Struct
-//
+/*
+ * TodoEntry Struct
+ * Holds the data for a single todo list entry
+ */
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TodoEntry {
     done: bool,
@@ -38,9 +37,10 @@ impl std::fmt::Display for TodoEntry {
     }
 }
 
-//
-// TodoList Struct
-//
+/*
+ * TodoList Struct
+ * Holds each TodoEntry in the todo list
+ */
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TodoList {
     pub list_name: String,
@@ -65,36 +65,11 @@ impl TodoList {
         self.todo_list.push(item);
     }
 
-}
-
-//
-// Other Functions
-//
-pub fn save_list(list: &mut TodoList) -> bool {
-    if !std::path::Path::new("lists").exists(){
-        match fs::create_dir("lists") {
-            Ok(_) => println!("New directory created"),
-            Err(e) => println!("Failed to create directory: {}", e)
-        }
+    pub fn remove(&mut self, index: usize) {
+        let _ = self.todo_list.remove(index);
     }
-    let path = format!("lists/{}.json", &list.list_name);
-    match serde_json::to_string(list) {
-        Ok(r) => match fs::write(path, r) {
-            Ok(_) => true,
-            Err(_) => {println!("Failed to write to file");
-                false}
-        }
-        Err(e) => panic!("Failed to serialize struct: {e}")
-    }
-}
-pub fn load_list(list_name: String) -> TodoList {
-    let path = format!("lists/{}.json", list_name);
-    let data = match fs::read_to_string(path) {
-        Ok(r) => r,
-        Err(e) => panic!("File could not be open: {}", e)
-    };
-    match serde_json::de::from_str(&data) {
-        Ok(r) => r,
-        Err(e) => panic!("Deserialization failed: {}", e)
+    
+    pub fn rename(&mut self, name: String) {
+        self.list_name = name;
     }
 }
