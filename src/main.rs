@@ -1,22 +1,23 @@
 #![allow(dead_code)]
 use rust_todo::*;
 use console::{self, Term};
-use utils::{load_list, save_list};
+
 mod utils;
+use utils::*;
 
 fn main() {
     let terminal = Term::stdout();
-    let list_of_list = start(&terminal);
-    main_menu_loop(&terminal, &list_of_list);
+    main_menu_loop(&terminal);
 }
 
-fn start(term: &Term) -> Vec<String> {
+fn get_lists(term: &Term) -> Vec<String> {
     term.clear_screen().unwrap();
     utils::find_lists()
 }
 
-fn main_menu_loop(term: &Term, lists: &Vec<String>) {
+fn main_menu_loop(term: &Term) {
     loop {
+        let lists = get_lists(&term);
         term.clear_screen().unwrap();
         print_list_selection(&term, &lists);
         let quit = display_main_menu(&term, &lists);
@@ -65,8 +66,8 @@ fn display_main_menu(term: &Term, lists: &Vec<String>) -> bool {
     let choice = term.read_char().unwrap();
     match choice {
         'o' | 'O' => {open_list(&term, &lists); false},
-        'n' | 'N' => {false}, 
-        'd' | 'D' => {false},
+        'n' | 'N' => {new_list(&term); false}, 
+        'd' | 'D' => {delete_selected_list(&term, &lists); false},
         'q' | 'Q' => true,
         _ => false
     }
@@ -86,13 +87,14 @@ fn open_list(term: &Term, lists: &Vec<String>) {
 }
 
 fn display_list_menu(term: &Term, list: &mut TodoList) -> bool {
-    term.write_line("[N] new entry | [M] mark as done | [U] mark as not done| [D] delete entry | [Q] quit").unwrap();
+    term.write_line("[N] new entry | [M] mark as done | [U] mark as not done| [D] delete entry | [R] rename list | [Q] quit").unwrap();
     let choice = term.read_char().unwrap();
     match choice {
         'n' | 'N' => {new_entry(&term, list); false},
         'm' | 'M' => {mark_entry_as_done(&term, list); false},
         'u' | 'U' => {mark_entry_as_not_done(&term, list); false},
         'd' | 'D' => {delete_entry(&term, list); false},
+        'r' | 'R' => {rename_list(&term, list); false},
         'q' | 'Q' => true,
         _ => false
     }
@@ -121,6 +123,30 @@ fn delete_entry(term: &Term, list: &mut TodoList) {
 
 fn rename_list(term: &Term, list: &mut TodoList) {
     term.write_line("Enter new name: ").unwrap();
+    let old_name = list.list_name.clone();
     let name = term.read_line().unwrap();
     list.rename(name);
+    delete_list_by_name(&old_name);
+}
+
+fn new_list(term: &Term) {
+    term.write_line("Enter name of new list: ").unwrap();
+    let name = term.read_line().unwrap();
+    let mut list = TodoList::new(name);
+    save_list(&mut list);
+}
+
+fn delete_selected_list(term: &Term, lists: &Vec<String>) {
+    let choice = display_number_menu(&term);
+    let path_to_list = match lists.get(choice-1) {
+        Some(r) => r,
+        None => return
+    };
+    let line = format!("Are you sure you want to delete {} ? [Y/N]", &path_to_list);
+    term.write_line(&line).unwrap();
+    match term.read_char().unwrap() {
+        'y' | 'Y' => (),
+        _ => return
+    }
+    delete_list_by_path(path_to_list);
 }

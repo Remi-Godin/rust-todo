@@ -63,3 +63,18 @@ pub fn print_path_list(path_list: Vec<String>) {
         println!("{}", i);
     }
 }
+
+pub fn delete_list_by_name(list_name: &String) {
+    let file_path = format!("lists/{}.json", list_name);
+    match fs::remove_file(&file_path) {
+        Ok(_) => return,
+        Err(e) => println!("File ({}) could not be deleted: {}", &file_path, e)
+    }
+}
+
+pub fn delete_list_by_path(list_path: &String) {
+    match fs::remove_file(&list_path) {
+        Ok(_) => return,
+        Err(e) => println!("File ({}) could not be deleted: {}", &list_path, e)
+    }
+}
