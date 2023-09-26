@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use rust_todo::*;
 use console::{self, Term};
 
