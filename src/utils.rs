@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::TodoList;
 use std::fs;
 
@@ -41,6 +40,12 @@ pub fn load_list(list_path: &String) -> Option<TodoList> {
 
 pub fn find_lists() -> Vec<String> {
 //! Reads the lists directory and retreive the path of all the lists
+    if !std::path::Path::new("lists").exists(){
+        match fs::create_dir("lists") {
+            Ok(_) => println!("New directory created"),
+            Err(e) => println!("Failed to create directory: {}", e)
+        }
+    }
     let path = fs::read_dir("lists/").unwrap();
     let mut path_list: Vec<String> = Vec::new();
     for i in path {
