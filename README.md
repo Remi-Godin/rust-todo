@@ -3,4 +3,8 @@ My first project made in Rust. A cli todo list application.
 
 # Features
 - Create and manage multiple todo lists
-- Save and Load to and from json files
+- Renaming lists
+- Delete lists
+- Mark and unmark entries as done
+- Delete list entries
+- Save and load lists locally
