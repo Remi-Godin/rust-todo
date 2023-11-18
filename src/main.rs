@@ -82,6 +82,7 @@ fn display_main_menu(term: &Term, lists: &Vec<String>) -> bool {
 }
 
 fn open_list(term: &Term, lists: &Vec<String>) {
+    println!("Opening list...");
     if let Some(choice) = display_number_menu(term) {
         let item: &String = match lists.get(choice-1) {
             Some(r) => r,
@@ -116,24 +117,28 @@ fn new_entry(term: &Term, list: &mut TodoList) {
 }
 
 fn mark_entry_as_done(term: &Term, list: &mut TodoList) {
+    println!("Mark entry as done...");
     if let Some(choice) = display_number_menu(term) {
         list.todo_list.get_mut(choice-1).unwrap().mark_as_done();
     }
 }
 
 fn mark_entry_as_not_done(term: &Term, list: &mut TodoList) {
+    println!("Mark entry as NOT done...");
     if let Some(choice) = display_number_menu(term) {
         list.todo_list.get_mut(choice-1).unwrap().mark_as_not_done();
     }
 }
 
 fn delete_entry(term: &Term, list: &mut TodoList) {
+    println!("Delete entry...");
     if let Some(choice) = display_number_menu(term) {
         list.remove(choice-1);
     }
 }
 
 fn rename_list(term: &Term, list: &mut TodoList) {
+    println!("Rename list...");
     term.write_line("Enter new name: ").unwrap();
     let old_name = list.list_name.clone();
     let name = term.read_line().unwrap();
@@ -149,6 +154,7 @@ fn new_list(term: &Term) {
 }
 
 fn delete_selected_list(term: &Term, lists: &Vec<String>) {
+    println!("Deleting list...");
     if let Some(choice) = display_number_menu(term) {
         let path_to_list = match lists.get(choice-1) {
             Some(r) => r,
